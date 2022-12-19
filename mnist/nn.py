@@ -241,7 +241,7 @@ def main():
     args = parser.parse_args()
 
     np.random.seed(100)
-    train_data, train_labels = read_data('./images_train.csv', './labels_train.csv')
+    train_data, train_labels = read_data('./mnist/images_train.csv', './mnist/labels_train.csv')
     train_labels = one_hot_labels(train_labels)
     p = np.random.permutation(60000)
     train_data = train_data[p,:]
@@ -257,7 +257,7 @@ def main():
     train_data = (train_data - mean) / std
     dev_data = (dev_data - mean) / std
 
-    test_data, test_labels = read_data('./images_test.csv', './labels_test.csv')
+    test_data, test_labels = read_data('./mnist/images_test.csv', './mnist/labels_test.csv')
     test_labels = one_hot_labels(test_labels)
     test_data = (test_data - mean) / std
 
