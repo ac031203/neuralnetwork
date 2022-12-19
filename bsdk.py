@@ -1,2 +1,2 @@
 print("Updated")
-print(69)
+print("bad boi")
