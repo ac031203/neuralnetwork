@@ -34,6 +34,7 @@ def sigmoid(x):
         A numpy float array containing the sigmoid results
     """
     # *** START CODE HERE ***
+    return ((1.0)/(1+np.exp(-x)))
     # *** END CODE HERE ***
 
 def get_initial_params(input_size, num_hidden, num_output):
