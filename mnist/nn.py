@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+import warnings
+
+warnings.filterwarnings("error")
 
 def softmax(x):
     """
@@ -21,6 +24,23 @@ def softmax(x):
         A 2d numpy float array containing the softmax results of shape batch_size x number_of_classes
     """
     # *** START CODE HERE ***
+
+    g = np.zeros(x.shape)
+
+    bath_size, number_of_classes = x.shape
+
+    for i in range(bath_size):
+        try:
+            sum_i = np.sum(np.exp(x[i]))
+            for j in range(number_of_classes):
+                g[i][j] = np.exp(x[i][j])/sum_i
+        except RuntimeWarning:
+            idx = np.argmax(x[i])
+            for j in range(number_of_classes):
+                g[i][j] = 1 if j==idx else 0
+                
+    return g
+
     # *** END CODE HERE ***
 
 def sigmoid(x):
@@ -63,6 +83,15 @@ def get_initial_params(input_size, num_hidden, num_output):
     """
 
     # *** START CODE HERE ***
+
+    b1 = np.zeros(shape=(num_hidden,))
+    b2 = np.zeros(shape=(num_output,))
+
+    W1 = np.random.standard_normal(shape=(input_size,num_hidden))
+    W2 = np.random.standard_normal(shape=(num_hidden,num_output))
+
+    return {b1:b1, b2:b2, W1:W1, W2:W2}
+
     # *** END CODE HERE ***
 
 def forward_prop(data, labels, params):

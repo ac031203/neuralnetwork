@@ -2,3 +2,4 @@
 /mnist/images_train.csv
 /mnist/labels_test.csv
 /mnist/labels_train.csv
+/mnist/t.py
