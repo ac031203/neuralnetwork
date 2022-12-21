@@ -54,7 +54,7 @@ def sigmoid(x):
         A numpy float array containing the sigmoid results
     """
     # *** START CODE HERE ***
-    return ((1.0)/(1+np.exp(-x)))
+    return [1/(1+np.exp(-z)) for z in x]
     # *** END CODE HERE ***
 
 def get_initial_params(input_size, num_hidden, num_output):
@@ -113,6 +113,18 @@ def forward_prop(data, labels, params):
             3. The average loss for these data elements
     """
     # *** START CODE HERE ***
+
+    W1,W2,b1,b2 = params.W1, params.W2, params.b1, params.b2
+    z1 = np.dot(W1,data) + b1
+    a1 = np.vectorize(sigmoid)(z1)
+    z2 = np.dot(a1,W2) + b2
+    y_hat = softmax(z2)
+    loss = 0
+    for i in range(y_hat.shape(0)):
+        for j in range(y_hat.shape(1)):
+            loss -= np.log(y_hat[i][j]) if labels[i][j] else 0
+    return (a1,y_hat,loss)
+
     # *** END CODE HERE ***
 
 def backward_prop(data, labels, params, forward_prop_func):
@@ -136,6 +148,9 @@ def backward_prop(data, labels, params, forward_prop_func):
             W1, W2, b1, and b2
     """
     # *** START CODE HERE ***
+
+
+
     # *** END CODE HERE ***
 
 
