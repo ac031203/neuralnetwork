@@ -54,7 +54,7 @@ def sigmoid(x):
         A numpy float array containing the sigmoid results
     """
     # *** START CODE HERE ***
-    return [1/(1+np.exp(-z)) for z in x]
+    return 1/(1+np.exp(-x))
     # *** END CODE HERE ***
 
 def get_initial_params(input_size, num_hidden, num_output):
@@ -87,10 +87,10 @@ def get_initial_params(input_size, num_hidden, num_output):
     b1 = np.zeros(shape=(num_hidden,))
     b2 = np.zeros(shape=(num_output,))
 
-    W1 = np.random.standard_normal(shape=(input_size,num_hidden))
-    W2 = np.random.standard_normal(shape=(num_hidden,num_output))
+    W1 = np.random.standard_normal(size=(input_size,num_hidden))
+    W2 = np.random.standard_normal(size=(num_hidden,num_output))
 
-    return {b1:b1, b2:b2, W1:W1, W2:W2}
+    return {'b1':b1, 'b2':b2, 'W1':W1, 'W2':W2}
 
     # *** END CODE HERE ***
 
@@ -114,14 +114,14 @@ def forward_prop(data, labels, params):
     """
     # *** START CODE HERE ***
 
-    W1,W2,b1,b2 = params.W1, params.W2, params.b1, params.b2
-    z1 = np.dot(W1,data) + b1
+    W1,W2,b1,b2 = params['W1'], params['W2'], params['b1'], params['b2']
+    z1 = np.dot(data,W1) + b1
     a1 = np.vectorize(sigmoid)(z1)
     z2 = np.dot(a1,W2) + b2
     y_hat = softmax(z2)
     loss = 0
-    for i in range(y_hat.shape(0)):
-        for j in range(y_hat.shape(1)):
+    for i in range(y_hat.shape[0]):
+        for j in range(y_hat.shape[1]):
             loss -= np.log(y_hat[i][j]) if labels[i][j] else 0
     return (a1,y_hat,loss)
 
@@ -149,7 +149,13 @@ def backward_prop(data, labels, params, forward_prop_func):
     """
     # *** START CODE HERE ***
 
-
+    a1, y_hat, loss = forward_prop_func(data, labels, params)
+    W1,W2,b1,b2 = params['W1'], params['W2'], params['b1'], params['b2']
+    grad_W1 = np.gradient(loss,W1)
+    grad_b1 = np.gradient(loss,b1)
+    grad_W2 = np.gradient(loss,W2)
+    grad_b2 = np.gradient(loss,b2)
+    return {W1:grad_W1,b1:grad_b1,W2:grad_W2,b2:grad_b2}
 
     # *** END CODE HERE ***
 
@@ -198,6 +204,24 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
     """
 
     # *** START CODE HERE ***
+
+    n, m = train_data.shape
+    number_of_iterations = n//batch_size
+    for i in range(number_of_iterations):
+        batch_data = train_data[i*(batch_size):(i+1)*(batch_size)]
+        batch_labels = train_labels[i*(batch_size):(i+1)*(batch_size)]
+        # (a1, y_hat, loss) = forward_prop_func(batch_data, batch_labels, params)
+        temp = backward_prop_func(batch_data,batch_labels,params,forward_prop_func)
+        grad_W1, grad_b1, grad_W2, grad_b2 = temp.W1, temp.b1, temp.W2, temp.b2
+        new_W1 = params['W1'] - learning_rate*(grad_W1)
+        new_b1 = params['b1'] - learning_rate*(grad_b1)
+        new_W2 = params['W2'] - learning_rate*(grad_W2)
+        new_b2 = params['b2'] - learning_rate*(grad_b2)
+        params['W1'] =  new_W1
+        params['W2'] =  new_W2
+        params['b1'] =  new_b1
+        params['b2'] =  new_b2
+
     # *** END CODE HERE ***
 
     # This function does not return anything
