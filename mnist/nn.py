@@ -25,21 +25,10 @@ def softmax(x):
     """
     # *** START CODE HERE ***
 
-    g = np.zeros(x.shape)
-
-    bath_size, number_of_classes = x.shape
-
-    for i in range(bath_size):
-        try:
-            sum_i = np.sum(np.exp(x[i]))
-            for j in range(number_of_classes):
-                g[i][j] = np.exp(x[i][j])/sum_i
-        except RuntimeWarning:
-            idx = np.argmax(x[i])
-            for j in range(number_of_classes):
-                g[i][j] = 1 if j==idx else 0
-                
-    return g
+    x = x - np.max(x,axis=1)[:,np.newaxis]
+    exp = np.exp(x)
+    s = exp / np.sum(exp,axis=1)[:,np.newaxis]
+    return s
 
     # *** END CODE HERE ***
 
@@ -54,7 +43,10 @@ def sigmoid(x):
         A numpy float array containing the sigmoid results
     """
     # *** START CODE HERE ***
-    return 1/(1+np.exp(-x))
+    try:
+        return 1 / (1 + np.exp(-x))
+    except RuntimeWarning:
+        return 0
     # *** END CODE HERE ***
 
 def get_initial_params(input_size, num_hidden, num_output):
@@ -119,10 +111,7 @@ def forward_prop(data, labels, params):
     a1 = np.vectorize(sigmoid)(z1)
     z2 = np.dot(a1,W2) + b2
     y_hat = softmax(z2)
-    loss = 0
-    for i in range(y_hat.shape[0]):
-        for j in range(y_hat.shape[1]):
-            loss -= np.log(y_hat[i][j]) if labels[i][j] else 0
+    loss = -np.sum(labels*np.log(y_hat,out=y_hat,where=y_hat>0))/data.shape[0]
     return (a1,y_hat,loss)
 
     # *** END CODE HERE ***
@@ -151,11 +140,14 @@ def backward_prop(data, labels, params, forward_prop_func):
 
     a1, y_hat, loss = forward_prop_func(data, labels, params)
     W1,W2,b1,b2 = params['W1'], params['W2'], params['b1'], params['b2']
-    grad_W1 = np.gradient(loss,W1)
-    grad_b1 = np.gradient(loss,b1)
-    grad_W2 = np.gradient(loss,W2)
-    grad_b2 = np.gradient(loss,b2)
-    return {W1:grad_W1,b1:grad_b1,W2:grad_W2,b2:grad_b2}
+    m = data.shape[0]
+    grad_z2 = y_hat - labels #
+    grad_W2 = np.dot(a1.T,grad_z2) #
+    grad_b2 = np.sum(grad_z2,axis=0,keepdims=True)/m #
+    grad_z1 = (np.dot(grad_z2,W2.T))*(a1*(1-a1))
+    grad_W1 = (np.dot(data.T,grad_z1))/m
+    grad_b1 = np.sum(grad_z2)/m
+    return {'W1':grad_W1,'b1':grad_b1,'W2':grad_W2,'b2':grad_b2}
 
     # *** END CODE HERE ***
 
@@ -212,7 +204,7 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
         batch_labels = train_labels[i*(batch_size):(i+1)*(batch_size)]
         # (a1, y_hat, loss) = forward_prop_func(batch_data, batch_labels, params)
         temp = backward_prop_func(batch_data,batch_labels,params,forward_prop_func)
-        grad_W1, grad_b1, grad_W2, grad_b2 = temp.W1, temp.b1, temp.W2, temp.b2
+        grad_W1, grad_b1, grad_W2, grad_b2 = temp['W1'], temp['b1'], temp['W2'], temp['b2']
         new_W1 = params['W1'] - learning_rate*(grad_W1)
         new_b1 = params['b1'] - learning_rate*(grad_b1)
         new_W2 = params['W2'] - learning_rate*(grad_W2)
