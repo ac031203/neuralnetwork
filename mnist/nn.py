@@ -107,11 +107,12 @@ def forward_prop(data, labels, params):
     # *** START CODE HERE ***
 
     W1,W2,b1,b2 = params['W1'], params['W2'], params['b1'], params['b2']
-    z1 = np.dot(data,W1) + b1
-    a1 = np.vectorize(sigmoid)(z1)
-    z2 = np.dot(a1,W2) + b2
-    y_hat = softmax(z2)
-    loss = -np.sum(labels*np.log(y_hat,out=y_hat,where=y_hat>0))/data.shape[0]
+    z1 = (data.dot(W1) + b1)
+    a1 = sigmoid(z1)
+    y_hat = softmax(np.dot(a1,W2) + b2)
+    # y_hat = softmax(z1.dot(W2) + b2)
+    # print(a1.shape)
+    loss = -np.sum(labels*np.log(y_hat))/data.shape[0]
     return (a1,y_hat,loss)
 
     # *** END CODE HERE ***
@@ -138,16 +139,7 @@ def backward_prop(data, labels, params, forward_prop_func):
     """
     # *** START CODE HERE ***
 
-    a1, y_hat, loss = forward_prop_func(data, labels, params)
-    W1,W2,b1,b2 = params['W1'], params['W2'], params['b1'], params['b2']
-    m = data.shape[0]
-    grad_z2 = y_hat - labels #
-    grad_W2 = np.dot(a1.T,grad_z2) #
-    grad_b2 = np.sum(grad_z2,axis=0,keepdims=True)/m #
-    grad_z1 = (np.dot(grad_z2,W2.T))*(a1*(1-a1))
-    grad_W1 = (np.dot(data.T,grad_z1))/m
-    grad_b1 = np.sum(grad_z2)/m
-    return {'W1':grad_W1,'b1':grad_b1,'W2':grad_W2,'b2':grad_b2}
+    return backward_prop_regularized(data,labels,params,forward_prop_func,0)
 
     # *** END CODE HERE ***
 
@@ -174,6 +166,16 @@ def backward_prop_regularized(data, labels, params, forward_prop_func, reg):
             W1, W2, b1, and b2
     """
     # *** START CODE HERE ***
+    a1, y_hat, loss = forward_prop_func(data, labels, params)
+    W1,W2,b1,b2 = params['W1'], params['W2'], params['b1'], params['b2']
+    m = data.shape[0]
+    grad_z2 = y_hat - labels #
+    grad_W2 = np.dot(a1.T,grad_z2)/m + 2*reg*W2 #
+    grad_b2 = np.sum(grad_z2,axis=0,keepdims=True)/m #
+    grad_z1 = (np.dot(grad_z2,W2.T))*(a1*(1-a1))
+    grad_W1 = (np.dot(data.T,grad_z1))/m + 2*reg*W1
+    grad_b1 = np.sum(grad_z2)/m
+    return {'W1':grad_W1,'b1':grad_b1,'W2':grad_W2,'b2':grad_b2}
     # *** END CODE HERE ***
 
 def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, params, forward_prop_func, backward_prop_func):
@@ -199,12 +201,15 @@ def gradient_descent_epoch(train_data, train_labels, learning_rate, batch_size, 
 
     n, m = train_data.shape
     number_of_iterations = n//batch_size
+    # print(params['W1'])
     for i in range(number_of_iterations):
         batch_data = train_data[i*(batch_size):(i+1)*(batch_size)]
         batch_labels = train_labels[i*(batch_size):(i+1)*(batch_size)]
         # (a1, y_hat, loss) = forward_prop_func(batch_data, batch_labels, params)
         temp = backward_prop_func(batch_data,batch_labels,params,forward_prop_func)
         grad_W1, grad_b1, grad_W2, grad_b2 = temp['W1'], temp['b1'], temp['W2'], temp['b2']
+        # print('new grad')
+        # print(grad_W1)
         new_W1 = params['W1'] - learning_rate*(grad_W1)
         new_b1 = params['b1'] - learning_rate*(grad_b1)
         new_W2 = params['W2'] - learning_rate*(grad_W2)
@@ -233,6 +238,7 @@ def nn_train(
     accuracy_train = []
     accuracy_dev = []
     for epoch in range(num_epochs):
+        # print("number of epochs left - ", num_epochs-epoch)
         gradient_descent_epoch(train_data, train_labels, 
             learning_rate, batch_size, params, forward_prop_func, backward_prop_func)
 
@@ -281,7 +287,7 @@ def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs):
     ax1.plot(t, cost_dev, 'b', label='dev')
     ax1.set_xlabel('epochs')
     ax1.set_ylabel('loss')
-    ax1.set_title('With Regularization')
+    ax1.set_title(name)
     ax1.legend()
 
     ax2.plot(t, accuracy_train,'r', label='train')
@@ -293,7 +299,7 @@ def run_train_test(name, all_data, all_labels, backward_prop_func, num_epochs):
     fig.savefig('./' + name + '.pdf')
 
     accuracy = nn_test(all_data['test'], all_labels['test'], params)
-    print('For model %s, got accuracy: %f' % (name, accuracy))
+    print('For model %s, got accuracy: %f %%' % (name, accuracy*100))
 
 def main():
     parser = argparse.ArgumentParser(description='Train a nn model.')
